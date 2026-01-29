@@ -1,0 +1,46 @@
+# 系统配置
+system:
+  camera_fps: 60
+  detection_fps: 45
+  prediction_fps: 9
+  buffer_size: 3
+  detection_queue_size: 5
+  
+# 摄像头配置
+camera:
+  device: "/dev/video0"
+  width: 3840
+  height: 2160
+  format: "MJPG"
+  
+# 检测器配置
+detector:
+  engine_path: "best.engine"
+  confidence_threshold: 0.25
+  nms_threshold: 0.45
+  target_classes: ["football"]
+  
+# 预测器配置
+predictor:
+  type: "kalman"
+  prediction_horizon: 0.1  # 预测0.1秒后的位置
+  smoothing_factor: 0.1
+  
+# 云台配置
+gimbal:
+  device: "/dev/ttyUSB0"
+  baud_rate: 115200
+  max_pitch: 30    # 最大俯仰角（度）
+  max_yaw: 30      # 最大方位角（度）
+  max_speed: 30    # 最大转速（度/秒）
+  invert_pitch: false
+  invert_yaw: false
+  
+# 显示配置
+display:
+  enabled: true
+  width: 1280
+  height: 720
+  show_fps: true
+  show_boxes: true
+  show_prediction: true
