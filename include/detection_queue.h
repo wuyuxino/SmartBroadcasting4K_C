@@ -19,12 +19,30 @@ private:
 public:
     explicit DetectionResultQueue(size_t capacity) : capacity_(capacity) {}
     
-    // 推送检测结果
+    // 推送检测结果（默认不推送空结果，避免队列被无检测帧填满）
     bool push(std::vector<DetectionBox>&& result) {
+        if (result.empty()) {
+            // 不推送空结果
+            return false;
+        }
+
         std::unique_lock<std::mutex> lock(mutex_);
         
         if (queue_.size() >= capacity_) {
             // 队列满，丢弃最旧的结果
+            queue_.pop_front();
+        }
+        
+        queue_.push_back(std::move(result));
+        not_empty_.notify_one();
+        return true;
+    }
+
+    // 如果需要保留空结果（不推荐），可以使用此方法显式推送空结果
+    bool push_allow_empty(std::vector<DetectionBox>&& result) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        
+        if (queue_.size() >= capacity_) {
             queue_.pop_front();
         }
         
