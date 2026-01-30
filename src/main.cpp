@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     consumer.start();
     
     // 启动显示线程
-    std::thread display_thread(displayThread);
+    // std::thread display_thread(displayThread);
     
     // 主循环：监控性能
     auto start_time = std::chrono::steady_clock::now();
@@ -141,7 +141,6 @@ int main(int argc, char** argv) {
             std::cout << " | 检测(ms): " << consumer.get_avg_inference_time_ms();
             std::cout << " | ProdFPS: " << producer.get_fps();
             std::cout << " | 球数: " << ball_count;
-            std::cout << " | FPS: " << frame_count / elapsed << "          ";
             std::cout.flush();
 
             frame_count = 0;
@@ -154,9 +153,9 @@ int main(int argc, char** argv) {
     consumer.stop();
     running = false;
     
-    if (display_thread.joinable()) {
-        display_thread.join();
-    }
+    // if (display_thread.joinable()) {
+    //     display_thread.join();
+    // }
     
     std::cout << "\n\n✅ 系统正常退出" << std::endl;
     return 0;
