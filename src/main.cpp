@@ -36,7 +36,7 @@ void displayThread() {
                 cv::resize(frame_data.frame, display_frame, 
                           cv::Size(Config::SHOW_WIDTH, Config::SHOW_HEIGHT));
                 if (display_frame.empty()) continue;
-                
+                cv::cvtColor(display_frame, display_frame, cv::COLOR_RGB2BGR);
                 // 绘制检测结果
                 for (const auto& box : boxes) {
                     cv::rectangle(display_frame,
@@ -78,8 +78,6 @@ int main(int argc, char** argv) {
     signal(SIGINT, signal_handler);
     
     std::cout << "🚀 启动YOLOv8多线程检测系统" << std::endl;
-    std::cout << "📷 生产者帧率: 60 FPS" << std::endl;
-    std::cout << "🔍 消费者帧率: 45 FPS" << std::endl;
     std::cout << "🔄 环形缓冲区大小: " << Config::RING_BUFFER_SIZE << std::endl;
     std::cout << "📊 检测结果队列大小: " << Config::DETECTION_QUEUE_SIZE << std::endl;
     
