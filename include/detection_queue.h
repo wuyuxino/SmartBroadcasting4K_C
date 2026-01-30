@@ -58,6 +58,12 @@ public:
         result = queue_.back();
         return true;
     }
+
+    // 获取队列所有元素（拷贝，不移除）
+    std::vector<std::vector<DetectionBox>> peek_all() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return std::vector<std::vector<DetectionBox>>(queue_.begin(), queue_.end());
+    }
     
     // 清空队列
     void clear() {

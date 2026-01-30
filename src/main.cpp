@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <algorithm>
 #include <string>
+#include <iomanip>
 
 // 全局变量
 std::atomic<bool> running(true);
@@ -140,10 +141,50 @@ int main(int argc, char** argv) {
             std::cout << " | 获取+解码(ms): " << producer.get_avg_capture_decode_time_ms();
             std::cout << " | 检测(ms): " << consumer.get_avg_inference_time_ms();
             std::cout << " | ProdFPS: " << producer.get_fps();
-            std::cout << " | 球数: " << ball_count;
+            std::cout << " | 球数: " << ball_count << std::endl;
+
+            // 打印详细检测结果（每秒一次，全部显示）
+            if (!latest_boxes.empty()) {
+                std::cout << "检测结果(" << latest_boxes.size() << ") : ";
+                for (size_t i = 0; i < latest_boxes.size(); ++i) {
+                    const auto& b = latest_boxes[i];
+                    std::cout << "[" << b.class_name << ", ";
+                    std::cout << std::fixed << std::setprecision(2) << b.confidence << std::defaultfloat;
+                    std::cout << ", (" << (int)b.x1 << "," << (int)b.y1 << "," << (int)b.x2 << "," << (int)b.y2 << ")]";
+                    if (i + 1 < latest_boxes.size()) std::cout << ", ";
+                }
+                std::cout << std::endl;
+            } else {
+                std::cout << "检测结果(0): none" << std::endl;
+            }
+
+            // 打印检测队列全部内容（可能很多，按帧列出）
+            {
+                auto all_results = detection_queue.peek_all();
+                if (!all_results.empty()) {
+                    std::cout << "检测队列内容 (" << all_results.size() << ") 全量:\n";
+                    for (size_t fi = 0; fi < all_results.size(); ++fi) {
+                        const auto& res = all_results[fi];
+                        std::cout << "  [" << fi << "] " << res.size() << " boxes: ";
+                        if (res.empty()) {
+                            std::cout << "none";
+                        } else {
+                            for (size_t bi = 0; bi < res.size(); ++bi) {
+                                const auto& b = res[bi];
+                                std::cout << "[" << b.class_name << "," << std::fixed << std::setprecision(2) << b.confidence << std::defaultfloat
+                                          << ",(" << (int)b.x1 << "," << (int)b.y1 << "," << (int)b.x2 << "," << (int)b.y2 << ")]";
+                                if (bi + 1 < res.size()) std::cout << ", ";
+                            }
+                        }
+                        std::cout << "\n";
+                    }
+                } else {
+                    std::cout << "检测队列为空" << std::endl;
+                }
+            }
+
             std::cout.flush();
 
-            frame_count = 0;
             start_time = now;
         }
     }
