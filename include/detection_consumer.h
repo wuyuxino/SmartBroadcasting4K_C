@@ -70,6 +70,13 @@ private:
     InferenceEngine engine_;
     std::atomic<bool> running_{true};
     std::thread consumer_thread_;
+
+    // 统计数据
+    std::atomic<uint64_t> total_inference_time_ms_{0};
+    std::atomic<int> processed_frames_{0};
+    std::atomic<uint64_t> frames_processed_total_{0};
+    std::chrono::steady_clock::time_point last_fps_check_time_;
+    uint64_t last_frames_processed_count_ = 0;
     
 public:
     DetectionConsumer(FrameRingBuffer& ring_buffer, 
@@ -80,6 +87,11 @@ public:
     void start();
     void stop();
     float get_fps();
+
+    double get_avg_inference_time_ms() const {
+        uint64_t frames = processed_frames_.load();
+        return frames ? (double)total_inference_time_ms_.load() / frames : 0.0;
+    }
     
 private:
     void consumerLoop();

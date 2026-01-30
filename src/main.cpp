@@ -7,6 +7,8 @@
 #include <thread>
 #include <chrono>
 #include <signal.h>
+#include <algorithm>
+#include <string>
 
 // 全局变量
 std::atomic<bool> running(true);
@@ -115,13 +117,33 @@ int main(int argc, char** argv) {
             now - start_time).count() / 1000.0f;
         
         if (elapsed >= 1.0f) {
+            // 获取最新检测结果以统计球数
+            std::vector<DetectionBox> latest_boxes;
+            int ball_count = 0;
+            if (detection_queue.peek_latest(latest_boxes) && !latest_boxes.empty()) {
+                for (const auto& b : latest_boxes) {
+                    std::string name = b.class_name;
+                    // 转为小写以便匹配 "ball"
+                    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+                    if (name.find("ball") != std::string::npos || name == "football") {
+                        ball_count++;
+                    }
+                }
+            }
+
             std::cout << "\r📊 系统状态: ";
             std::cout << "缓冲区: " << frame_buffer.size() << "/" << frame_buffer.capacity();
             std::cout << " | 检测队列: " << detection_queue.size() << "/" 
                      << Config::DETECTION_QUEUE_SIZE;
+            // 显示统计：跳过帧数、平均获取+解码时间、平均检测时间
+            std::cout << " | 跳过帧: " << producer.get_skipped_frames();
+            std::cout << " | 获取+解码(ms): " << producer.get_avg_capture_decode_time_ms();
+            std::cout << " | 检测(ms): " << consumer.get_avg_inference_time_ms();
+            std::cout << " | ProdFPS: " << producer.get_fps();
+            std::cout << " | 球数: " << ball_count;
             std::cout << " | FPS: " << frame_count / elapsed << "          ";
             std::cout.flush();
-            
+
             frame_count = 0;
             start_time = now;
         }

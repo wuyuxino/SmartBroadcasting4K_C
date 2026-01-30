@@ -50,6 +50,9 @@ struct Config {
     // 缓冲区配置
     static constexpr int RING_BUFFER_SIZE = 3;      // 环形缓冲区大小
     static constexpr int DETECTION_QUEUE_SIZE = 5;  // 检测结果队列大小
+
+    // 启动时跳过的帧数（避免前若干帧不稳定）
+    static constexpr int SKIP_INITIAL_FRAMES = 50;
 };
 
 // 检测框结构

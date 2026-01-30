@@ -122,43 +122,61 @@ void CameraProducer::stop() {
 }
 
 float CameraProducer::get_fps() {
-    static int frame_count = 0;
-    static auto last_time = std::chrono::steady_clock::now();
-    static float fps = 0;
-    
-    frame_count++;
     auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now - last_time).count() / 1000.0f;
-    
-    if (elapsed > 1.0f) {
-        fps = frame_count / elapsed;
-        frame_count = 0;
-        last_time = now;
+    float elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - last_fps_check_time_).count() / 1000.0f;
+
+    uint64_t total = frames_pushed_total_.load();
+    uint64_t delta = total - last_frames_pushed_count_;
+
+    float fps = 0.0f;
+    if (elapsed > 0.0001f) {
+        fps = delta / elapsed;
     }
-    
+
+    last_frames_pushed_count_ = total;
+    last_fps_check_time_ = now;
     return fps;
-}
+} 
 
 void CameraProducer::producerLoop() {
     int frame_id = 0;
-    
+
+    // 初始化 FPS 计时点
+    last_fps_check_time_ = std::chrono::steady_clock::now();
+
     while (running_) {
+        auto t0 = std::chrono::steady_clock::now();
         // 采集一帧
         cv::Mat frame = captureFrame();
+        auto t1 = std::chrono::steady_clock::now();
+
         if (frame.empty()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
             continue;
         }
-        
+
+        int seen = frames_seen_.fetch_add(1) + 1;
+        if (seen <= Config::SKIP_INITIAL_FRAMES) {
+            skipped_frames_.fetch_add(1);
+            // 不推送、不统计这些前导帧
+            continue;
+        }
+
+        // 记录获取+解码时间（毫秒）
+        uint64_t dt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        total_capture_decode_time_ms_.fetch_add(dt_ms);
+
         // 推送到环形缓冲区
         FrameData frame_data(std::move(frame), frame_id++);
         ring_buffer_.push_nonblock(std::move(frame_data));
-        
+        frames_pushed_.fetch_add(1);
+        frames_pushed_total_.fetch_add(1);
+
         // 控制帧率（60FPS ≈ 16.67ms/帧）
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
-}
+} 
 
 cv::Mat CameraProducer::captureFrame() {
     fd_set fds;

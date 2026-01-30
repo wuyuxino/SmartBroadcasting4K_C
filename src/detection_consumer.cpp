@@ -294,21 +294,20 @@ void DetectionConsumer::stop() {
 }
 
 float DetectionConsumer::get_fps() {
-    static int frame_count = 0;
-    static auto last_time = std::chrono::steady_clock::now();
-    static float fps = 0;
-    
-    frame_count++;
     auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now - last_time).count() / 1000.0f;
-    
-    if (elapsed > 1.0f) {
-        fps = frame_count / elapsed;
-        frame_count = 0;
-        last_time = now;
+    float elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - last_fps_check_time_).count() / 1000.0f;
+
+    uint64_t total = frames_processed_total_.load();
+    uint64_t delta = total - last_frames_processed_count_;
+
+    float fps = 0.0f;
+    if (elapsed > 0.0001f) {
+        fps = delta / elapsed;
     }
-    
+
+    last_frames_processed_count_ = total;
+    last_fps_check_time_ = now;
     return fps;
 }
 
@@ -320,16 +319,21 @@ void DetectionConsumer::consumerLoop() {
         if (ring_buffer_.peek_latest(frame_data) && frame_data.valid) {
             // 执行推理
             auto start_time = std::chrono::steady_clock::now();
-            
+
             std::vector<DetectionBox> boxes = engine_.infer(frame_data.frame);
-            
+
             auto end_time = std::chrono::steady_clock::now();
             auto inference_time = std::chrono::duration_cast<std::chrono::milliseconds>(
                 end_time - start_time).count();
-            
+
+            // 记录统计
+            total_inference_time_ms_.fetch_add(inference_time);
+            processed_frames_.fetch_add(1);
+            frames_processed_total_.fetch_add(1);
+
             // 推送到结果队列
             result_queue_.push(std::move(boxes));
-            
+
             // 控制帧率（45FPS ≈ 22.22ms/帧）
             std::this_thread::sleep_until(start_time + std::chrono::milliseconds(22));
         } else {
