@@ -1,7 +1,8 @@
 #### 文件夹说明
 ```txt
-文件结构
-/
+代码目录结构
+
+SmartBroadcasting4K_C/
 ├── include/
 │   ├── ring_buffer.h
 │   ├── detection_queue.h
@@ -33,19 +34,19 @@
 
 #### 编译
 ```bash
-mkdir build && cd build
-cmake ..
-make -j4
+$ mkdir build && cd build
+$ cmake ..
+$ make -j4
 ```
 
 #### 运行
 ```bash
-export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/C/onnx/tensorrt86/TensorRT-8.6.1.6/lib:/usr/local/lib:$LD_LIBRARY_PATH
-./yolov8_system
+$ export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/C/onnx/tensorrt86/TensorRT-8.6.1.6/lib:/usr/local/lib:$LD_LIBRARY_PATH
+$ ./yolov8_system
 ```
 
 #### 上传电脑目录
 ```bash
-scp -r ./* user@192.168.31.149:/C/ONNX/cuda_onnx/finall
+$ scp -r ./* user@192.168.31.149:/C/ONNX/cuda_onnx/finall
 
 ```
