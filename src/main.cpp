@@ -105,8 +105,8 @@ int main(int argc, char** argv) {
     producer.start();
     consumer.start();
 
-    // 创建 PTZ 控制和预测器（TCP版）；请按需修改IP和端口
-    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZTcpController>("192.168.100.88", 5678, 100, 500, 10, false);
+    // 创建 PTZ 控制和预测器（TCP版）；请按需修改IP和端口。将 debug 打开以便查看发送/连接日志
+    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZTcpController>("192.168.100.88", 5678, 100, 500, 10, true);
     PredictionManager predictor(detection_queue, ptz.get(), "kalman_params.json", "norm_stats.json");
     predictor.start();
     
@@ -150,6 +150,13 @@ int main(int argc, char** argv) {
             std::cout << " | 检测(ms): " << consumer.get_avg_inference_time_ms();
             std::cout << " | 预测(ms): " << predictor.get_avg_prediction_time_ms();
             std::cout << " | ProdFPS: " << producer.get_fps();
+            // PTZ send count (if using PTZTcpController)
+            uint64_t ptz_sent = 0;
+            if (ptz) {
+                auto tcp_ptz = dynamic_cast<PTZTcpController*>(ptz.get());
+                if (tcp_ptz) ptz_sent = tcp_ptz->getSentCount();
+            }
+            std::cout << " | PTZ_sent: " << ptz_sent;
             std::cout << " | 球数: " << ball_count << std::endl;
 
             // 打印详细检测结果（每秒一次，全部显示）
