@@ -147,6 +147,7 @@ int main(int argc, char** argv) {
             std::cout << " | 跳过帧: " << producer.get_skipped_frames();
             std::cout << " | 获取+解码(ms): " << producer.get_avg_capture_decode_time_ms();
             std::cout << " | 检测(ms): " << consumer.get_avg_inference_time_ms();
+            std::cout << " | 预测(ms): " << predictor.get_avg_prediction_time_ms();
             std::cout << " | ProdFPS: " << producer.get_fps();
             std::cout << " | 球数: " << ball_count << std::endl;
 

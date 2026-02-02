@@ -100,7 +100,14 @@ void PredictionManager::loop() {
                         std::cout << std::endl;
 
                         try {
+                            auto pred_start = std::chrono::steady_clock::now();
                             auto futures = predictor_->predict(history);
+                            auto pred_end = std::chrono::steady_clock::now();
+                            auto pred_us = std::chrono::duration_cast<std::chrono::microseconds>(pred_end - pred_start).count();
+                            total_prediction_time_us_.fetch_add((uint64_t)pred_us);
+                            prediction_count_.fetch_add(1);
+
+                            std::cout << "[PredictionManager] predict_time_us=" << pred_us << " (avg=" << get_avg_prediction_time_ms() << " ms)" << std::endl;
 
                             // Debug: print all predicted frames
                             if (!futures.empty()) {
@@ -230,4 +237,13 @@ bool PredictionManager::isBall(const std::string& s) {
     // Debug: 打印 class_name 判断
     // std::cout << "[PredictionManager] isBall("<<s<<") -> " << (ret?"YES":"NO") << std::endl;
     return ret;
+}
+
+// 返回平均预测时间（ms）
+double PredictionManager::get_avg_prediction_time_ms() const {
+    int count = prediction_count_.load();
+    if (count == 0) return 0.0;
+    // total stored in microseconds -> convert to milliseconds
+    double avg_us = (double)total_prediction_time_us_.load() / (double)count;
+    return avg_us / 1000.0;
 }

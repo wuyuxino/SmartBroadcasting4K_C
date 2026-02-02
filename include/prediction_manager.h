@@ -41,6 +41,9 @@ public:
     void set_sum_move_thresh(double t) { sum_move_thresh_ = t; }
     double get_sum_move_thresh() const { return sum_move_thresh_; }
 
+    // 预测时间统计（ms）
+    double get_avg_prediction_time_ms() const;
+
 private:
     void loop();
     bool hasSignificantChange(const std::vector<std::vector<DetectionBox>>& frames);
@@ -64,4 +67,8 @@ private:
     double sum_move_thresh_ = 40.0; // 默认累积位移阈值
 
     int prediction_horizon_ = 2; // 默认使用第三帧（index=2）
+
+    // 预测时间统计（以微秒累计以提高精度）
+    std::atomic<uint64_t> total_prediction_time_us_{0};
+    std::atomic<int> prediction_count_{0};
 };
