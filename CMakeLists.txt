@@ -39,6 +39,7 @@ add_executable(yolov8_system
     src/detection_consumer.cpp
     src/prediction_manager.cpp
     src/ptz_controller.cpp
+    src/ptz_tcp_controller.cpp
 )
 
 
@@ -62,6 +63,11 @@ endif()
 
 if(Eigen3_FOUND)
     target_link_libraries(yolov8_system PRIVATE Eigen3::Eigen)
+endif()
+
+# Windows sockets
+if(WIN32)
+    target_link_libraries(yolov8_system PRIVATE ws2_32)
 endif()
 
 # 设置CUDA架构

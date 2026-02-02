@@ -125,14 +125,15 @@ void PredictionManager::loop() {
                                 std::cout << "[PredictionManager] using prediction index="<<idx<<" (fid="<<sel.frame_id<<")" << std::endl;
                                 std::cout << "[PredictionManager] predicted px=" << px << " py=" << py << std::endl;
 
-                                // Convert pixel to pan/tilt degrees (simple linear mapping from pixel to FOV)
-                                // Need to define camera FOV; use heuristic: 90x60
-                                const double fov_h = 90.0; // degrees
-                                const double fov_v = 60.0;
-                                double pan = ((px / (double)Config::MODEL_WIDTH) - 0.5) * fov_h;
-                                double tilt = ((py / (double)Config::MODEL_HEIGHT) - 0.5) * fov_v;
+                                // Map pixel center -> absolute pan/tilt using trained linear fit (from your Python)
+                                // Pan = 0.033440 * center_x - 19.79
+                                // Tilt = -0.005492 * center_y - 8.35
+                                double center_x = px;
+                                double center_y = py;
+                                double pan = 0.033440 * center_x - 19.79;  // 坐标系转换
+                                double tilt = -0.005492 * center_y - 8.35; // 坐标系转换
                                 double zoom = 1.0;
-                                std::cout << "[PredictionManager] sending PTZ pan="<<pan<<" tilt="<<tilt<<"\n";
+                                std::cout << "[PredictionManager] mapping pixel->Pan/Tilt: Pan="<<pan<<" Tilt="<<tilt<<"\n";
                                 ptz_->sendPanTilt(pan, tilt, zoom);
                                 last_fire_ = std::chrono::steady_clock::now();
                             } else {
