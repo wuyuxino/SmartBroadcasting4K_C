@@ -49,6 +49,8 @@ public:
         uint64_t frames = frames_pushed_.load();
         return frames ? (double)total_capture_decode_time_ms_.load() / frames : 0.0;
     }
+    // 总推送帧数（用于显示系统总帧统计）
+    uint64_t get_total_pushed_frames() const { return frames_pushed_total_.load(); }
     
 private:
     void producerLoop();

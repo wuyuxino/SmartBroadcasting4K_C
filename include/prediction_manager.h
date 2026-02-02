@@ -44,6 +44,10 @@ public:
     // 预测时间统计（ms）
     double get_avg_prediction_time_ms() const;
 
+    // 调试控制：简单日志与详细 (verbose) 日志
+    void setDebug(bool d) { debug_ = d; }
+    void setVerboseDebug(bool v) { verbose_debug_ = v; }
+
 private:
     void loop();
     bool hasSignificantChange(const std::vector<std::vector<DetectionBox>>& frames);
@@ -71,4 +75,8 @@ private:
     // 预测时间统计（以微秒累计以提高精度）
     std::atomic<uint64_t> total_prediction_time_us_{0};
     std::atomic<int> prediction_count_{0};
+
+    // 调试标志（默认关闭）
+    bool debug_ = false;
+    bool verbose_debug_ = false;
 };

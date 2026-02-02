@@ -106,7 +106,7 @@ int main(int argc, char** argv) {
     consumer.start();
 
     // 创建 PTZ 控制和预测器（TCP版）；请按需修改IP和端口。将 debug 打开以便查看发送/连接日志
-    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZTcpController>("192.168.100.88", 5678, 100, 500, 10, true);
+    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZTcpController>("192.168.100.88", 5678, 100, 500, 10, false);
     PredictionManager predictor(detection_queue, ptz.get(), "kalman_params.json", "norm_stats.json");
     predictor.start();
     
@@ -141,7 +141,8 @@ int main(int argc, char** argv) {
             }
 
             std::cout << "\r📊 系统状态: ";
-            std::cout << "缓冲区: " << frame_buffer.size() << "/" << frame_buffer.capacity();
+            std::cout << "总帧数: " << producer.get_total_pushed_frames();
+            std::cout << " | 缓冲区: " << frame_buffer.size() << "/" << frame_buffer.capacity();
             std::cout << " | 检测队列: " << detection_queue.size() << "/" 
                      << Config::DETECTION_QUEUE_SIZE;
             // 显示统计：跳过帧数、平均获取+解码时间、平均检测时间
@@ -160,44 +161,44 @@ int main(int argc, char** argv) {
             std::cout << " | 球数: " << ball_count << std::endl;
 
             // 打印详细检测结果（每秒一次，全部显示）
-            if (!latest_boxes.empty()) {
-                std::cout << "检测结果(" << latest_boxes.size() << ") : ";
-                for (size_t i = 0; i < latest_boxes.size(); ++i) {
-                    const auto& b = latest_boxes[i];
-                    std::cout << "[" << b.class_name << ", ";
-                    std::cout << std::fixed << std::setprecision(2) << b.confidence << std::defaultfloat;
-                    std::cout << ", (" << (int)b.x1 << "," << (int)b.y1 << "," << (int)b.x2 << "," << (int)b.y2 << ")]";
-                    if (i + 1 < latest_boxes.size()) std::cout << ", ";
-                }
-                std::cout << std::endl;
-            } else {
-                std::cout << "检测结果(0): none" << std::endl;
-            }
+            // if (!latest_boxes.empty()) {
+            //     std::cout << "检测结果(" << latest_boxes.size() << ") : ";
+            //     for (size_t i = 0; i < latest_boxes.size(); ++i) {
+            //         const auto& b = latest_boxes[i];
+            //         std::cout << "[" << b.class_name << ", ";
+            //         std::cout << std::fixed << std::setprecision(2) << b.confidence << std::defaultfloat;
+            //         std::cout << ", (" << (int)b.x1 << "," << (int)b.y1 << "," << (int)b.x2 << "," << (int)b.y2 << ")]";
+            //         if (i + 1 < latest_boxes.size()) std::cout << ", ";
+            //     }
+            //     std::cout << std::endl;
+            // } else {
+            //     std::cout << "检测结果(0): none" << std::endl;
+            // }
 
             // 打印检测队列全部内容（可能很多，按帧列出）
-            {
-                auto all_results = detection_queue.peek_all();
-                if (!all_results.empty()) {
-                    std::cout << "检测队列内容 (" << all_results.size() << ") 全量:\n";
-                    for (size_t fi = 0; fi < all_results.size(); ++fi) {
-                        const auto& res = all_results[fi];
-                        std::cout << "  [" << fi << "] " << res.size() << " boxes: ";
-                        if (res.empty()) {
-                            std::cout << "none";
-                        } else {
-                            for (size_t bi = 0; bi < res.size(); ++bi) {
-                                const auto& b = res[bi];
-                                std::cout << "[" << b.class_name << "," << std::fixed << std::setprecision(2) << b.confidence << std::defaultfloat
-                                          << ",(" << (int)b.x1 << "," << (int)b.y1 << "," << (int)b.x2 << "," << (int)b.y2 << ")]";
-                                if (bi + 1 < res.size()) std::cout << ", ";
-                            }
-                        }
-                        std::cout << "\n";
-                    }
-                } else {
-                    std::cout << "检测队列为空" << std::endl;
-                }
-            }
+            // {
+            //     auto all_results = detection_queue.peek_all();
+            //     if (!all_results.empty()) {
+            //         std::cout << "检测队列内容 (" << all_results.size() << ") 全量:\n";
+            //         for (size_t fi = 0; fi < all_results.size(); ++fi) {
+            //             const auto& res = all_results[fi];
+            //             std::cout << "  [" << fi << "] " << res.size() << " boxes: ";
+            //             if (res.empty()) {
+            //                 std::cout << "none";
+            //             } else {
+            //                 for (size_t bi = 0; bi < res.size(); ++bi) {
+            //                     const auto& b = res[bi];
+            //                     std::cout << "[" << b.class_name << "," << std::fixed << std::setprecision(2) << b.confidence << std::defaultfloat
+            //                               << ",(" << (int)b.x1 << "," << (int)b.y1 << "," << (int)b.x2 << "," << (int)b.y2 << ")]";
+            //                     if (bi + 1 < res.size()) std::cout << ", ";
+            //                 }
+            //             }
+            //             std::cout << "\n";
+            //         }
+            //     } else {
+            //         std::cout << "检测队列为空" << std::endl;
+            //     }
+            // }
 
             std::cout.flush();
 
