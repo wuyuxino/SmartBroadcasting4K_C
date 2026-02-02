@@ -67,6 +67,13 @@ struct Config {
 
     // 启动时跳过的帧数（避免前若干帧不稳定）
     static constexpr int SKIP_INITIAL_FRAMES = 50;
+
+    // 发送命令控制设置
+    static constexpr int WINDOW = 5; // 平滑窗口大小（帧数）
+    static constexpr int CHECK_MS = 16; // 检查间隔（毫秒）
+    static constexpr int COOLDOWN_MS = 16; // 控制冷却时间（毫秒）
+    static constexpr double SUM_MOVE_THRESH = 40.0; // 累积移动阈值（像素）
+    static constexpr int PREDICTION_HORIZON = 2; // 预测时间步长（帧数）默认使用第三帧（index=2）
 };
 
 // 检测框结构

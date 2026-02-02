@@ -23,8 +23,8 @@ public:
                       IPTZController* ptz,
                       const std::string& kalman_json,
                       const std::string& norm_json,
-                      double sum_move_thresh = 8.0,
-                      int prediction_horizon = 2);
+                      double sum_move_thresh = Config::SUM_MOVE_THRESH,
+                      int prediction_horizon = Config::PREDICTION_HORIZON);
     ~PredictionManager();
 
     void set_prediction_horizon(int h) { prediction_horizon_ = h; }
@@ -63,14 +63,13 @@ private:
     std::chrono::steady_clock::time_point last_fire_;
     std::mutex mutex_;
 
-    static constexpr int WINDOW = 5;  // 最近多少帧用于“累积位移”计算
-    static constexpr int CHECK_MS = 16; // 预测器的轮询间隔（毫秒）
-    static constexpr int COOLDOWN_MS = 16;   // 预测器触发PTZ控制的冷却时间（毫秒）
-    static constexpr float MOVE_THRESH_PX = 30.0f; // 保留旧阈值（按需）
+    static constexpr int WINDOW = Config::WINDOW;  // 最近多少帧用于“累积位移”计算
+    static constexpr int CHECK_MS = Config::CHECK_MS; // 预测器的轮询间隔（毫秒）
+    static constexpr int COOLDOWN_MS = Config::COOLDOWN_MS;   // 预测器触发PTZ控制的冷却时间（毫秒）
 
-    double sum_move_thresh_ = 40.0; // 默认累积位移阈值
+    double sum_move_thresh_ = Config::SUM_MOVE_THRESH; // 默认累积位移阈值
 
-    int prediction_horizon_ = 2; // 默认使用第三帧（index=2）
+    int prediction_horizon_ = Config::PREDICTION_HORIZON; // 默认使用第三帧（index=2）
 
     // 预测时间统计（以微秒累计以提高精度）
     std::atomic<uint64_t> total_prediction_time_us_{0};
