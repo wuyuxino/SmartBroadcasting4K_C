@@ -54,11 +54,11 @@ void PredictionManager::loop() {
         auto all = queue_.peek_all();
 
         // Debug: 打印队列大小
-        std::cout << "[PredictionManager] peek_all size=" << all.size() << std::endl;
+        // std::cout << "[PredictionManager] peek_all size=" << all.size() << std::endl;
 
         if (!all.empty()) {
             bool changed = hasSignificantChange(all);
-            std::cout << "[PredictionManager] hasSignificantChange=" << (changed ? "YES" : "NO") << std::endl;
+            // std::cout << "[PredictionManager] hasSignificantChange=" << (changed ? "YES" : "NO") << std::endl;
             if (changed) {
                 auto now = std::chrono::steady_clock::now();
                 if (std::chrono::duration_cast<std::chrono::milliseconds>(now - last_fire_).count() >= COOLDOWN_MS) {
@@ -90,14 +90,14 @@ void PredictionManager::loop() {
                     }
 
                     if (history.size() >= 2) {
-                        std::cout << "[PredictionManager] history size=" << history.size() << " -> calling predictor" << std::endl;
+                        // std::cout << "[PredictionManager] history size=" << history.size() << " -> calling predictor" << std::endl;
 
                         // Debug: print input history (frame_id, x, y)
-                        std::cout << "[PredictionManager] predictor input history: ";
-                        for (const auto &hc : history) {
-                            std::cout << "[fid=" << hc.frame_id << ", x=" << hc.x1 << ", y=" << hc.y1 << "] ";
-                        }
-                        std::cout << std::endl;
+                        // std::cout << "[PredictionManager] predictor input history: ";
+                        // for (const auto &hc : history) {
+                        //     std::cout << "[fid=" << hc.frame_id << ", x=" << hc.x1 << ", y=" << hc.y1 << "] ";
+                        // }
+                        // std::cout << std::endl;
 
                         try {
                             auto pred_start = std::chrono::steady_clock::now();
@@ -107,23 +107,23 @@ void PredictionManager::loop() {
                             total_prediction_time_us_.fetch_add((uint64_t)pred_us);
                             prediction_count_.fetch_add(1);
 
-                            std::cout << "[PredictionManager] predict_time_us=" << pred_us << " (avg=" << get_avg_prediction_time_ms() << " ms)" << std::endl;
+                            // std::cout << "[PredictionManager] predict_time_us=" << pred_us << " (avg=" << get_avg_prediction_time_ms() << " ms)" << std::endl;
 
                             // Debug: print all predicted frames
                             if (!futures.empty()) {
-                                std::cout << "[PredictionManager] predictor returned " << futures.size() << " frames: ";
-                                for (const auto &f : futures) {
-                                    std::cout << "[fid=" << f.frame_id << ", x=" << f.x1 << ", y=" << f.y1 << "] ";
-                                }
-                                std::cout << std::endl;
+                                // std::cout << "[PredictionManager] predictor returned " << futures.size() << " frames: ";
+                                // for (const auto &f : futures) {
+                                //     std::cout << "[fid=" << f.frame_id << ", x=" << f.x1 << ", y=" << f.y1 << "] ";
+                                // }
+                                // std::cout << std::endl;
 
                                 // choose index based on prediction_horizon_, clamp to available frames
                                 int idx = std::min((int)futures.size() - 1, std::max(0, prediction_horizon_));
                                 const auto &sel = futures[idx];
                                 double px = sel.x1;
                                 double py = sel.y1;
-                                std::cout << "[PredictionManager] using prediction index="<<idx<<" (fid="<<sel.frame_id<<")" << std::endl;
-                                std::cout << "[PredictionManager] predicted px=" << px << " py=" << py << std::endl;
+                                // std::cout << "[PredictionManager] using prediction index="<<idx<<" (fid="<<sel.frame_id<<")" << std::endl;
+                                // std::cout << "[PredictionManager] predicted px=" << px << " py=" << py << std::endl;
 
                                 // Map pixel center -> absolute pan/tilt using trained linear fit (from your Python)
                                 // Pan = 0.033440 * center_x - 19.79
@@ -133,7 +133,7 @@ void PredictionManager::loop() {
                                 double pan = 0.033440 * center_x - 19.79;  // 坐标系转换
                                 double tilt = -0.005492 * center_y - 8.35; // 坐标系转换
                                 double zoom = 1.0;
-                                std::cout << "[PredictionManager] mapping pixel->Pan/Tilt: Pan="<<pan<<" Tilt="<<tilt<<"\n";
+                                // std::cout << "[PredictionManager] mapping pixel->Pan/Tilt: Pan="<<pan<<" Tilt="<<tilt<<"\n";
                                 ptz_->sendPanTilt(pan, tilt, zoom);
                                 last_fire_ = std::chrono::steady_clock::now();
                             } else {
@@ -223,7 +223,7 @@ bool PredictionManager::hasSignificantChange(const std::vector<std::vector<Detec
         double dy = pts[t].y - pts[t-1].y;
         sum_dist += std::sqrt(dx*dx + dy*dy);
     }
-    std::cout << "[PredictionManager] cumulative dist=" << sum_dist << " (sum_thresh=" << sum_move_thresh_ << ")" << std::endl;
+    // std::cout << "[PredictionManager] cumulative dist=" << sum_dist << " (sum_thresh=" << sum_move_thresh_ << ")" << std::endl;
     return sum_dist >= sum_move_thresh_;
 }
 
