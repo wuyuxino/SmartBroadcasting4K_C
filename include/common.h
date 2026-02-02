@@ -1,7 +1,21 @@
 #pragma once
 
 #include <cstdint>
-#include <opencv2/opencv.hpp>
+#if defined(__has_include)
+  #if __has_include(<opencv2/opencv.hpp>)
+    #include <opencv2/opencv.hpp>
+  #else
+    // Minimal OpenCV stubs when OpenCV is not available (allows lightweight testing)
+    namespace cv {
+        class Mat {};
+        struct Rect { int x; int y; int width; int height; Rect(int x_=0,int y_=0,int w_=0,int h_=0):x(x_),y(y_),width(w_),height(h_){} };
+        struct Point2f { float x; float y; Point2f(float _x=0, float _y=0):x(_x),y(_y){} };
+    }
+  #endif
+#else
+  #include <opencv2/opencv.hpp>
+#endif
+
 #include <cuda_runtime.h>
 #include <iostream>
 #include <chrono>
@@ -30,7 +44,7 @@ void launch_preprocess_kernel(
 // 通用配置
 struct Config {
     // 摄像头配置
-    static constexpr const char* CAMERA_DEVICE = "/dev/video0";
+    static constexpr const char* CAMERA_DEVICE = "/dev/video4";
     static constexpr int CAM_WIDTH = 3840;
     static constexpr int CAM_HEIGHT = 2160;
     
@@ -61,14 +75,16 @@ struct DetectionBox {
     float confidence;
     int class_id;
     std::string class_name;
-    
+    int frame_id;            // 对应推理帧ID（由 consumer 填充）
+    uint64_t timestamp_ms;   // 可选：推理时的时间戳
+
     // 序列化方法
     cv::Rect toRect() const {
         return cv::Rect(x1, y1, x2-x1, y2-y1);
     }
     
     // 从Rect转换
-    static DetectionBox fromRect(const cv::Rect& rect, float conf, int class_id = 0) {
+    static DetectionBox fromRect(const cv::Rect& rect, float conf, int class_id = 0, int frame_id = 0, uint64_t ts = 0) {
         DetectionBox box;
         box.x1 = rect.x;
         box.y1 = rect.y;
@@ -77,6 +93,8 @@ struct DetectionBox {
         box.confidence = conf;
         box.class_id = class_id;
         box.class_name = "football";
+        box.frame_id = frame_id;
+        box.timestamp_ms = ts;
         return box;
     }
 };

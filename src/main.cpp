@@ -3,6 +3,8 @@
 #include "detection_queue.h"
 #include "camera_producer.h"
 #include "detection_consumer.h"
+#include "ptz_controller.h"
+#include "prediction_manager.h"
 #include <atomic>
 #include <thread>
 #include <chrono>
@@ -101,6 +103,11 @@ int main(int argc, char** argv) {
     // 启动各个线程
     producer.start();
     consumer.start();
+
+    // 创建 PTZ 控制和预测器（默认使用 stub）；JSON 文件路径在可执行目录
+    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZStub>();
+    PredictionManager predictor(detection_queue, ptz.get(), "kalman_params.json", "norm_stats.json");
+    predictor.start();
     
     // 启动显示线程
     // std::thread display_thread(displayThread);
@@ -190,6 +197,7 @@ int main(int argc, char** argv) {
     }
     
     // 停止所有线程
+    predictor.stop();
     producer.stop();
     consumer.stop();
     running = false;

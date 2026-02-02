@@ -331,7 +331,11 @@ void DetectionConsumer::consumerLoop() {
             processed_frames_.fetch_add(1);
             frames_processed_total_.fetch_add(1);
 
-            // 推送到结果队列
+            // 填充 frame_id/timestamp 并推送到结果队列
+            for (auto &b : boxes) {
+                b.frame_id = frame_data.frame_id;
+                b.timestamp_ms = frame_data.timestamp;
+            }
             result_queue_.push(std::move(boxes));
 
             // 控制帧率（45FPS ≈ 22.22ms/帧）

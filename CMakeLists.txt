@@ -5,8 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 查找必要的库
-find_package(OpenCV REQUIRED)
+find_package(OpenCV)
 find_package(CUDA REQUIRED)
+find_package(Eigen3)
+find_package(nlohmann_json)
 
 # 设置TensorRT路径
 set(TENSORRT_PATH "/C/onnx/tensorrt86/TensorRT-8.6.1.6")
@@ -35,10 +37,16 @@ add_executable(yolov8_system
     src/main.cpp
     src/camera_producer.cpp
     src/detection_consumer.cpp
+    src/prediction_manager.cpp
+    src/ptz_controller.cpp
 )
 
+
+
+
 # 链接库
-target_link_libraries(yolov8_system
+# 使用关键字签名（PRIVATE）以避免与后续的 keyword 调用冲突
+target_link_libraries(yolov8_system PRIVATE
     cuda_kernels
     ${OpenCV_LIBS}
     nvinfer
@@ -47,6 +55,14 @@ target_link_libraries(yolov8_system
     turbojpeg
     pthread
 )
+
+if(nlohmann_json_FOUND)
+    target_link_libraries(yolov8_system PRIVATE nlohmann_json::nlohmann_json)
+endif()
+
+if(Eigen3_FOUND)
+    target_link_libraries(yolov8_system PRIVATE Eigen3::Eigen)
+endif()
 
 # 设置CUDA架构
 set_target_properties(cuda_kernels PROPERTIES
