@@ -1,7 +1,5 @@
-#### 文件夹说明
+#### 文件夹说明（目录结构）
 ```txt
-代码目录结构
-
 SmartBroadcasting4K_C/
 ├── include/
 │   ├── ring_buffer.h
@@ -13,23 +11,25 @@ SmartBroadcasting4K_C/
 │   ├── inference_engine.cpp
 │   ├── cuda_kernels.cu
 │   └── main.cpp
+├── transformation/
+│   └── pth_to_json.py
 ├── build/
 │   ├── best.engine
 │   └── yolov8_system
 ├── CMakeLists.txt
 └── README.md
+```
 
-系统架构设计如下
-
-摄像头(60FPS, 4K)
-    ↓ (生产)
-[环形缓冲区] ← 实时填充，保留最新3帧
-    ↓ (消费者1)
-检测线程(45FPS) → [检测结果队列(长度5)] ← 保留最新5个检测结果
-    ↓ (消费者2)      ↓ (触发条件: 队列满)
-预测线程(9FPS)   → [预测结果]
-    ↓ (消费者3)
-控制线程(9FPS)   → 发送云台指令
+#### 需要模型转化（转化代码在transformation目录下）
+```bash
+# 检测模型 best 格式转化 onnx
+$ python ./transformation/pt_to_onnx.py
+# 检测模型 onnx 格式转化 engine
+$ trtexec --onnx=best.onnx --saveEngine=best.engine --fp16
+# 预测模型 pth 格式转化 json
+$ python ./transformation/pth_to_json.py
+# 以前手动编译程序（可以查看部分软件安装路径，后续直接用下面的编译模块命令进行编译即可。）
+$ g++ -std=c++17 yolov8_trt.cpp -o yolov8_trt -Wno-deprecated-declarations -I/usr/local/cuda-11.7/targets/x86_64-linux/include -I/C/onnx/tensorrt86/TensorRT-8.6.1.6/include -I/usr/local/include/opencv4/ -L/usr/local/cuda-11.7/targets/x86_64-linux/lib/ -L/C/onnx/tensorrt86/TensorRT-8.6.1.6/lib -L/usr/local/lib/ -Wl,-rpath=/usr/local/cuda-11.7/targets/x86_64-linux/lib/ -Wl,-rpath=/C/onnx/tensorrt86/TensorRT-8.6.1.6/lib -Wl,-rpath=/usr/local/lib/ -lnvinfer -lnvinfer_plugin -lnvonnxparser -lcudart -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_dnn -lopencv_cudaimgproc -lopencv_cudawarping -lopencv_cudaarithm -lturbojpeg -lpthread -lm -ldl
 ```
 
 #### 编译
@@ -48,5 +48,5 @@ $ ./yolov8_system
 #### 上传电脑目录
 ```bash
 $ scp -r ./* user@192.168.31.149:/C/ONNX/cuda_onnx/finall
-
+$ 123qweasd!
 ```
