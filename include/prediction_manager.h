@@ -18,12 +18,17 @@ class KalmanPredictor;
 class PredictionManager {
 public:
     // sum_move_thresh: 累积位移阈值（像素），默认 8.0
+    // prediction_horizon: index of predicted frame to use (0 = next frame, 2 = third frame)
     PredictionManager(DetectionResultQueue& q,
                       IPTZController* ptz,
                       const std::string& kalman_json,
                       const std::string& norm_json,
-                      double sum_move_thresh = 8.0);
+                      double sum_move_thresh = 8.0,
+                      int prediction_horizon = 2);
     ~PredictionManager();
+
+    void set_prediction_horizon(int h) { prediction_horizon_ = h; }
+    int get_prediction_horizon() const { return prediction_horizon_; }
 
     void start();
     void stop();
@@ -57,4 +62,6 @@ private:
     static constexpr float MOVE_THRESH_PX = 30.0f; // 保留旧阈值（按需）
 
     double sum_move_thresh_ = 40.0; // 默认累积位移阈值
+
+    int prediction_horizon_ = 2; // 默认使用第三帧（index=2）
 };

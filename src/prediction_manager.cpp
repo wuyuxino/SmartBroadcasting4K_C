@@ -24,8 +24,9 @@ PredictionManager::PredictionManager(DetectionResultQueue& q,
                                    IPTZController* ptz,
                                    const std::string& kalman_json,
                                    const std::string& norm_json,
-                                   double sum_move_thresh)
-    : queue_(q), ptz_(ptz), sum_move_thresh_(sum_move_thresh) {
+                                   double sum_move_thresh,
+                                   int prediction_horizon)
+    : queue_(q), ptz_(ptz), sum_move_thresh_(sum_move_thresh), prediction_horizon_(prediction_horizon) {
     // 延迟构造 KalmanPredictor（若依赖缺失则使用 stub）
     predictor_ = std::make_unique<KalmanPredictor>(kalman_json, norm_json);
 }
@@ -109,9 +110,12 @@ void PredictionManager::loop() {
                                 }
                                 std::cout << std::endl;
 
-                                // take first predicted frame centroid for PTZ
-                                double px = futures[0].x1;
-                                double py = futures[0].y1;
+                                // choose index based on prediction_horizon_, clamp to available frames
+                                int idx = std::min((int)futures.size() - 1, std::max(0, prediction_horizon_));
+                                const auto &sel = futures[idx];
+                                double px = sel.x1;
+                                double py = sel.y1;
+                                std::cout << "[PredictionManager] using prediction index="<<idx<<" (fid="<<sel.frame_id<<")" << std::endl;
                                 std::cout << "[PredictionManager] predicted px=" << px << " py=" << py << std::endl;
 
                                 // Convert pixel to pan/tilt degrees (simple linear mapping from pixel to FOV)
