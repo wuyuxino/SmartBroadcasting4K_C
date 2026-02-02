@@ -7,6 +7,8 @@
 #include <condition_variable>
 #include <atomic>
 #include <cstdint>
+#include <optional>
+#include <tuple>
 
 // 简单命令结构：合并高频命令仅保留最新一条
 struct PTZCommand {
@@ -38,7 +40,12 @@ public:
 
     // 调试与状态接口
     void setDebug(bool d) { debug_ = d; }
+    void setVerboseDebug(bool v) { verbose_debug_ = v; }
     uint64_t getSentCount() const { return sent_count_.load(); }
+
+    // 查询当前云台状态（blocking，返回 pan_deg, tilt_deg, zoom_multi ）
+    // 返回空 optional 表示查询失败
+    std::optional<std::tuple<double,double,double>> queryPosition(bool debug=false);
 
 private:
     void run();
@@ -51,6 +58,7 @@ private:
     int query_timeout_ms_;
     int send_interval_ms_;
     bool debug_;
+    bool verbose_debug_ = false;
 
     // 命令合并
     std::mutex cmd_mu_;
