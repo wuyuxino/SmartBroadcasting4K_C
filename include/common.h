@@ -44,7 +44,7 @@ void launch_preprocess_kernel(
 // 通用配置
 struct Config {
     // 摄像头配置
-    static constexpr const char* CAMERA_DEVICE = "/dev/video4";
+    static constexpr const char* CAMERA_DEVICE = "/dev/video0";
     static constexpr int CAM_WIDTH = 3840;
     static constexpr int CAM_HEIGHT = 2160;
     
