@@ -200,7 +200,9 @@ void InferenceEngine::decodeYOLOv8Output(const std::vector<float>& output,
             float box_width = x2 - x1;
             float box_height = y2 - y1;
             
-            if (box_width < 10 || box_height < 10 || 
+            // 过滤掉太小或太大的检测框
+            // 最小尺寸从10增加到20，避免检测到手挥动时产生的小圆点
+            if (box_width < 20 || box_height < 20 || 
                 box_width > Config::MODEL_WIDTH * 0.5f || 
                 box_height > Config::MODEL_HEIGHT * 0.5f) {
                 continue;
@@ -224,7 +226,8 @@ void InferenceEngine::postprocessNMS(std::vector<DetectionBox>& boxes) {
     }
     
     std::vector<int> indices;
-    cv::dnn::NMSBoxes(rects, scores, 0.001f, Config::NMS_THRESHOLD, indices);
+    // 使用Config::CONF_THRESHOLD而不是0.001f，确保只保留高置信度的检测
+    cv::dnn::NMSBoxes(rects, scores, Config::CONF_THRESHOLD, Config::NMS_THRESHOLD, indices);
     
     std::vector<DetectionBox> nms_boxes;
     for (int idx : indices) {
