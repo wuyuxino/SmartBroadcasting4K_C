@@ -76,6 +76,9 @@ struct Config {
     static constexpr int COOLDOWN_MS = 16; // 控制冷却时间（毫秒）
     static constexpr double SUM_MOVE_THRESH = 40.0; // 累积移动阈值（像素）
     static constexpr int PREDICTION_HORIZON = 2; // 预测时间步长（帧数）默认使用第三帧（index=2）
+
+    // PTZ TCP 控制配置
+    static constexpr int PTZ_SEND_INTERVAL_MS = 5; // PTZ 发送间隔（毫秒）
 };
 
 // 检测框结构

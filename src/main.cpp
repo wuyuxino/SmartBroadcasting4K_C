@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
     consumer.start();
 
     // 创建 PTZ 控制和预测器（TCP版）；请按需修改IP和端口。将 debug 打开以便查看发送/连接日志
-    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZTcpController>("192.168.100.88", 5678, 100, 500, 10, false);
+    std::unique_ptr<IPTZController> ptz = std::make_unique<PTZTcpController>("192.168.100.88", 5678, 100, 500, Config::PTZ_SEND_INTERVAL_MS, false);
     PredictionManager predictor(detection_queue, ptz.get(), "kalman_params.json", "norm_stats.json");
     predictor.start();
     
