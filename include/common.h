@@ -56,7 +56,7 @@ struct Config {
     // 显示配置
     static constexpr int SHOW_WIDTH = 1920;
     static constexpr int SHOW_HEIGHT = 1088;
-    static constexpr bool ENABLE_DISPLAY_THREAD = false; // 是否启用显示线程（默认关闭，减少资源占用）
+    static constexpr bool ENABLE_DISPLAY_THREAD = true; // 是否启用显示线程（默认关闭，减少资源占用）
     
     // 阈值配置
     static constexpr float CONF_THRESHOLD = 0.6f;
@@ -65,6 +65,7 @@ struct Config {
     // 缓冲区配置
     static constexpr int RING_BUFFER_SIZE = 3;      // 环形缓冲区大小
     static constexpr int DETECTION_QUEUE_SIZE = 5;  // 检测结果队列大小
+    static constexpr int MAX_DETECTION_FRAME_LAG = 3; // 允许显示/统计的检测结果最大帧延迟
 
     // 启动时跳过的帧数（避免前若干帧不稳定）
     static constexpr int SKIP_INITIAL_FRAMES = 50;

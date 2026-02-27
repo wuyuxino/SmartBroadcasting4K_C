@@ -19,6 +19,14 @@ std::atomic<bool> running(true);
 FrameRingBuffer frame_buffer(Config::RING_BUFFER_SIZE);
 DetectionResultQueue detection_queue(Config::DETECTION_QUEUE_SIZE);
 
+bool isDetectionFreshForFrame(const std::vector<DetectionBox>& boxes, int current_frame_id) {
+    if (boxes.empty()) return false;
+    int detection_frame_id = boxes.front().frame_id;
+    if (detection_frame_id <= 0) return false;
+    if (current_frame_id < detection_frame_id) return false;
+    return (current_frame_id - detection_frame_id) <= Config::MAX_DETECTION_FRAME_LAG;
+}
+
 void signal_handler(int sig) {
     std::cout << "\n收到停止信号，正在清理资源..." << std::endl;
     running = false;
@@ -43,23 +51,25 @@ void displayThread() {
             if (display_frame.empty()) continue;
             cv::cvtColor(display_frame, display_frame, cv::COLOR_RGB2BGR);
 
-            // 绘制检测结果（若有）
-            for (const auto& box : boxes) {
-                cv::rectangle(display_frame,
-                            cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
-                                     box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
-                            cv::Point(box.x2 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
-                                     box.y2 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
-                            cv::Scalar(0, 255, 0), 2);
+            // 仅绘制“新鲜”的检测结果，避免旧结果长期停留
+            if (isDetectionFreshForFrame(boxes, frame_data.frame_id)) {
+                for (const auto& box : boxes) {
+                    cv::rectangle(display_frame,
+                                cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
+                                         box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
+                                cv::Point(box.x2 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
+                                         box.y2 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
+                                cv::Scalar(0, 255, 0), 2);
 
-                std::string label = box.class_name + ": " +
-                                  std::to_string(box.confidence).substr(0, 4);
+                    std::string label = box.class_name + ": " +
+                                      std::to_string(box.confidence).substr(0, 4);
 
-                cv::putText(display_frame, label,
-                          cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH + 5,
-                                   box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT - 5),
-                          cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                          cv::Scalar(0, 255, 0), 2);
+                    cv::putText(display_frame, label,
+                              cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH + 5,
+                                       box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT - 5),
+                              cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                              cv::Scalar(0, 255, 0), 2);
+                }
             }
 
             cv::imshow("YOLOv8 Detection", display_frame);
@@ -131,9 +141,13 @@ int main(int argc, char** argv) {
         
         if (elapsed >= 1.0f) {
             // 获取最新检测结果以统计球数
+            FrameData latest_frame_data;
             std::vector<DetectionBox> latest_boxes;
             int ball_count = 0;
-            if (detection_queue.peek_latest(latest_boxes) && !latest_boxes.empty()) {
+            bool has_latest_frame = frame_buffer.peek_latest(latest_frame_data) && latest_frame_data.valid;
+            if (has_latest_frame &&
+                detection_queue.peek_latest(latest_boxes) &&
+                isDetectionFreshForFrame(latest_boxes, latest_frame_data.frame_id)) {
                 for (const auto& b : latest_boxes) {
                     std::string name = b.class_name;
                     // 转为小写以便匹配 "ball"
