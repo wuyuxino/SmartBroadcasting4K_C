@@ -31,39 +31,38 @@ void displayThread() {
     
     while (running) {
         std::vector<DetectionBox> boxes;
+        detection_queue.peek_latest(boxes);
         
-        // 获取最新检测结果
-        if (detection_queue.peek_latest(boxes) && !boxes.empty()) {
-            // 获取最新帧用于显示
-            FrameData frame_data;
-            if (frame_buffer.peek_latest(frame_data) && frame_data.valid) {
-                if (frame_data.frame.empty()) continue;
-                cv::Mat display_frame;
-                cv::resize(frame_data.frame, display_frame, 
-                          cv::Size(Config::SHOW_WIDTH, Config::SHOW_HEIGHT));
-                if (display_frame.empty()) continue;
-                cv::cvtColor(display_frame, display_frame, cv::COLOR_RGB2BGR);
-                // 绘制检测结果
-                for (const auto& box : boxes) {
-                    cv::rectangle(display_frame,
-                                cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
-                                         box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
-                                cv::Point(box.x2 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
-                                         box.y2 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
-                                cv::Scalar(0, 255, 0), 2);
-                    
-                    std::string label = box.class_name + ": " + 
-                                      std::to_string(box.confidence).substr(0, 4);
-                    
-                    cv::putText(display_frame, label,
-                              cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH + 5,
-                                       box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT - 5),
-                              cv::FONT_HERSHEY_SIMPLEX, 0.5,
-                              cv::Scalar(0, 255, 0), 2);
-                }
-                
-                cv::imshow("YOLOv8 Detection", display_frame);
+        // 获取最新帧用于显示（无论是否有检测框都显示）
+        FrameData frame_data;
+        if (frame_buffer.peek_latest(frame_data) && frame_data.valid) {
+            if (frame_data.frame.empty()) continue;
+            cv::Mat display_frame;
+            cv::resize(frame_data.frame, display_frame,
+                      cv::Size(Config::SHOW_WIDTH, Config::SHOW_HEIGHT));
+            if (display_frame.empty()) continue;
+            cv::cvtColor(display_frame, display_frame, cv::COLOR_RGB2BGR);
+
+            // 绘制检测结果（若有）
+            for (const auto& box : boxes) {
+                cv::rectangle(display_frame,
+                            cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
+                                     box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
+                            cv::Point(box.x2 * Config::SHOW_WIDTH / Config::MODEL_WIDTH,
+                                     box.y2 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT),
+                            cv::Scalar(0, 255, 0), 2);
+
+                std::string label = box.class_name + ": " +
+                                  std::to_string(box.confidence).substr(0, 4);
+
+                cv::putText(display_frame, label,
+                          cv::Point(box.x1 * Config::SHOW_WIDTH / Config::MODEL_WIDTH + 5,
+                                   box.y1 * Config::SHOW_HEIGHT / Config::MODEL_HEIGHT - 5),
+                          cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                          cv::Scalar(0, 255, 0), 2);
             }
+
+            cv::imshow("YOLOv8 Detection", display_frame);
         }
         
         // 检查退出键
@@ -82,10 +81,13 @@ void displayThread() {
 
 int main(int argc, char** argv) {
     signal(SIGINT, signal_handler);
+
+    const bool enable_display = Config::ENABLE_DISPLAY_THREAD;
     
     std::cout << "🚀 启动YOLOv8多线程检测系统" << std::endl;
     std::cout << "🔄 环形缓冲区大小: " << Config::RING_BUFFER_SIZE << std::endl;
     std::cout << "📊 检测结果队列大小: " << Config::DETECTION_QUEUE_SIZE << std::endl;
+    std::cout << "🖥️ 显示线程: " << (enable_display ? "开启" : "关闭") << std::endl;
     
     // 初始化生产者（摄像头）
     CameraProducer producer(frame_buffer);
@@ -110,8 +112,10 @@ int main(int argc, char** argv) {
     PredictionManager predictor(detection_queue, ptz.get(), "kalman_params.json", "norm_stats.json");
     predictor.start();
     
-    // 启动显示线程
-    // std::thread display_thread(displayThread);
+    std::thread display_thread;
+    if (enable_display) {
+        display_thread = std::thread(displayThread);
+    }
     
     // 主循环：监控性能
     auto start_time = std::chrono::steady_clock::now();
@@ -212,9 +216,9 @@ int main(int argc, char** argv) {
     consumer.stop();
     running = false;
     
-    // if (display_thread.joinable()) {
-    //     display_thread.join();
-    // }
+    if (display_thread.joinable()) {
+        display_thread.join();
+    }
     
     std::cout << "\n\n✅ 系统正常退出" << std::endl;
     return 0;

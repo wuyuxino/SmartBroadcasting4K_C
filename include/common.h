@@ -56,6 +56,7 @@ struct Config {
     // 显示配置
     static constexpr int SHOW_WIDTH = 1920;
     static constexpr int SHOW_HEIGHT = 1088;
+    static constexpr bool ENABLE_DISPLAY_THREAD = false; // 是否启用显示线程（默认关闭，减少资源占用）
     
     // 阈值配置
     static constexpr float CONF_THRESHOLD = 0.6f;
